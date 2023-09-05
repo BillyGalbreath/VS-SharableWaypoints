@@ -3,10 +3,10 @@
   "name": "Sharable Waypoints",
   "modid": "sharablewaypoints",
   "version": "1.0.0",
-  "description": "Client side mod to share your waypoints with your friends",
+  "description": "Share your waypoints with your group",
   "website": "https://github.com/BillyGalbreath/VS-SharableWaypoints",
   "authors": [ "BillyGalbreath" ],
-  "side": "Client",
+  "side": "Server",
   "dependency": {
     "game": "1.18.8"
   }
