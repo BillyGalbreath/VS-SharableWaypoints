@@ -28,7 +28,7 @@ public class SharableWaypoints : ModSystem {
     public override void Dispose() {
         harmony?.UnpatchAll(Mod.Info.ModID);
 
-        groupCache.Clear();
+        groupCache?.Clear();
         groupCache = null;
     }
 
