@@ -13,6 +13,8 @@ public class SharableWaypoints : ModSystem {
     private static Dictionary<string, int> groupCache;
 
     private Harmony harmony;
+    
+    public override bool AllowRuntimeReload => false;
 
     public override bool ShouldLoad(EnumAppSide side) {
         return side.IsServer();
