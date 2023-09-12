@@ -2,12 +2,14 @@
   "type": "code",
   "name": "Sharable Waypoints",
   "modid": "sharablewaypoints",
-  "version": "1.2.0",
-  "description": "Share your waypoints with your group",
+  "version": "1.3.0",
+  "description": "Share your waypoints with your group/friends",
   "website": "https://github.com/BillyGalbreath/VS-SharableWaypoints",
   "authors": [ "BillyGalbreath" ],
-  "side": "Server",
-  "dependency": {
+  "side": "Universal",
+  "requiredOnClient": true,
+  "requiredOnServer": true,
+  "dependencies": {
     "game": "1.18.8"
   }
 }
