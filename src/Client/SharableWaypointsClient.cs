@@ -42,13 +42,15 @@ public class SharableWaypointsClient : Common.SharableWaypoints {
 
     [HarmonyPrefix]
     [HarmonyPatch(typeof(GuiDialogEditWayPoint), "onDelete")]
-    public static bool PreOnDelete(GuiDialogEditWayPoint __instance) {
+    public static bool PreOnDelete(GuiDialogEditWayPoint __instance, bool __result) {
         ICoreClientAPI capi = (ICoreClientAPI)__instance.GetField<ICoreAPI>("capi")!;
         if (__instance.GetField<Waypoint>("waypoint")?.OwningPlayerUid == capi.World.Player.PlayerUID) {
             return true;
         }
 
         capi.ShowChatMessage("Cannot delete waypoints you do not own!");
+
+        __result = true;
         return false;
     }
 }
