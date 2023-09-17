@@ -14,8 +14,12 @@ public class SharableWaypointsClient : Common.SharableWaypoints {
     public SharableWaypointsClient(SharableWaypointsMod mod) : base(mod) {
         Harmony.Patch(typeof(WaypointMapLayer).GetMethod("OnDataFromServer", BindingFlags.Instance | BindingFlags.Public),
             prefix: typeof(SharableWaypointsClient).GetMethod("PreOnDataFromServer"));
+        Harmony.Patch(typeof(GuiDialogEditWayPoint).GetMethod("TryOpen", BindingFlags.Instance | BindingFlags.Public),
+            prefix: typeof(SharableWaypointsClient).GetMethod("PreTryOpen"));
         Harmony.Patch(typeof(GuiDialogEditWayPoint).GetMethod("onDelete", BindingFlags.Instance | BindingFlags.NonPublic),
             prefix: typeof(SharableWaypointsClient).GetMethod("PreOnDelete"));
+        Harmony.Patch(typeof(GuiDialogEditWayPoint).GetMethod("onSave", BindingFlags.Instance | BindingFlags.NonPublic),
+            prefix: typeof(SharableWaypointsClient).GetMethod("PreOnSave"));
     }
 
     [HarmonyPrefix]
@@ -41,6 +45,21 @@ public class SharableWaypointsClient : Common.SharableWaypoints {
     }
 
     [HarmonyPrefix]
+    [HarmonyPatch(typeof(GuiDialogEditWayPoint), "TryOpen")]
+    public static bool PreTryOpen(GuiDialogEditWayPoint __instance, bool __result) {
+        ICoreClientAPI capi = (ICoreClientAPI)__instance.GetField<ICoreAPI>("capi")!;
+        if (__instance.GetField<Waypoint>("waypoint")?.OwningPlayerUid == capi.World.Player.PlayerUID) {
+            return true;
+        }
+
+        capi.ShowChatMessage("Cannot edit waypoints you do not own!");
+        capi.Event.RegisterCallback(_ => { __instance.TryClose(); }, 1);
+
+        __result = false;
+        return false;
+    }
+
+    [HarmonyPrefix]
     [HarmonyPatch(typeof(GuiDialogEditWayPoint), "onDelete")]
     public static bool PreOnDelete(GuiDialogEditWayPoint __instance, bool __result) {
         ICoreClientAPI capi = (ICoreClientAPI)__instance.GetField<ICoreAPI>("capi")!;
@@ -49,6 +68,20 @@ public class SharableWaypointsClient : Common.SharableWaypoints {
         }
 
         capi.ShowChatMessage("Cannot delete waypoints you do not own!");
+
+        __result = true;
+        return false;
+    }
+
+    [HarmonyPrefix]
+    [HarmonyPatch(typeof(GuiDialogEditWayPoint), "onSave")]
+    public static bool PreOnSave(GuiDialogEditWayPoint __instance, bool __result) {
+        ICoreClientAPI capi = (ICoreClientAPI)__instance.GetField<ICoreAPI>("capi")!;
+        if (__instance.GetField<Waypoint>("waypoint")?.OwningPlayerUid == capi.World.Player.PlayerUID) {
+            return true;
+        }
+
+        capi.ShowChatMessage("Cannot edit waypoints you do not own!");
 
         __result = true;
         return false;
