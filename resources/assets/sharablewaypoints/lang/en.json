@@ -1,0 +1,5 @@
+{
+  "cannot-edit": "<font color=\"#7C0A02\">Cannot edit waypoints you do not own!</font>",
+  "cannot-delete": "<font color=\"#7C0A02\">Cannot delete waypoints you do not own!</font>",
+  "cannot-save": "<font color=\"#7C0A02\">Cannot save waypoints you do not own!</font>"
+}

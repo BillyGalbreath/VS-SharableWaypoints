@@ -4,6 +4,7 @@ using HarmonyLib;
 using SharableWaypoints.Common;
 using Vintagestory.API.Client;
 using Vintagestory.API.Common;
+using Vintagestory.API.Config;
 using Vintagestory.API.Util;
 using Vintagestory.GameContent;
 
@@ -52,7 +53,7 @@ public class SharableWaypointsClient : Common.SharableWaypoints {
             return true;
         }
 
-        capi.ShowChatMessage("Cannot edit waypoints you do not own!");
+        capi.ShowChatMessage(Lang.Get("sharablewaypoints:cannot-edit"));
         capi.Event.RegisterCallback(_ => { __instance.TryClose(); }, 1);
 
         __result = false;
@@ -67,7 +68,7 @@ public class SharableWaypointsClient : Common.SharableWaypoints {
             return true;
         }
 
-        capi.ShowChatMessage("Cannot delete waypoints you do not own!");
+        capi.ShowChatMessage(Lang.Get("sharablewaypoints:cannot-delete"));
 
         __result = true;
         return false;
@@ -81,7 +82,7 @@ public class SharableWaypointsClient : Common.SharableWaypoints {
             return true;
         }
 
-        capi.ShowChatMessage("Cannot edit waypoints you do not own!");
+        capi.ShowChatMessage(Lang.Get("sharablewaypoints:cannot-save"));
 
         __result = true;
         return false;
