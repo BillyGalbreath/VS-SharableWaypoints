@@ -1,7 +1,6 @@
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Reflection;
-using HarmonyLib;
-using SharableWaypoints.Common;
 using Vintagestory.API.Client;
 using Vintagestory.API.Common;
 using Vintagestory.API.Config;
@@ -10,79 +9,91 @@ using Vintagestory.GameContent;
 
 namespace SharableWaypoints.Client;
 
-[HarmonyPatch]
+[SuppressMessage("ReSharper", "InconsistentNaming")]
+[SuppressMessage("ReSharper", "UnusedMember.Global")]
 public class SharableWaypointsClient : Common.SharableWaypoints {
-    public SharableWaypointsClient(SharableWaypointsMod mod) : base(mod) {
+    public SharableWaypointsClient(ModSystem mod) : base(mod.Mod.Info.ModID) {
         Harmony.Patch(typeof(WaypointMapLayer).GetMethod("OnDataFromServer", BindingFlags.Instance | BindingFlags.Public),
             prefix: typeof(SharableWaypointsClient).GetMethod("PreOnDataFromServer"));
+
+        Harmony.Patch(typeof(GuiDialogAddWayPoint).GetMethod("autoSuggestName", BindingFlags.Instance | BindingFlags.NonPublic),
+            prefix: typeof(SharableWaypointsClient).GetMethod("PreAutoSuggestName"));
+        Harmony.Patch(typeof(GuiDialogAddWayPoint).GetMethod("onSave", BindingFlags.Instance | BindingFlags.NonPublic),
+            postfix: typeof(SharableWaypointsClient).GetMethod("PostOnAddSave"));
+
         Harmony.Patch(typeof(GuiDialogEditWayPoint).GetMethod("TryOpen", BindingFlags.Instance | BindingFlags.Public),
-            prefix: typeof(SharableWaypointsClient).GetMethod("PreTryOpen"));
+            prefix: typeof(SharableWaypointsClient).GetMethod("PreEditTryOpen"));
         Harmony.Patch(typeof(GuiDialogEditWayPoint).GetMethod("onDelete", BindingFlags.Instance | BindingFlags.NonPublic),
-            prefix: typeof(SharableWaypointsClient).GetMethod("PreOnDelete"));
+            prefix: typeof(SharableWaypointsClient).GetMethod("PreOnEditDelete"));
         Harmony.Patch(typeof(GuiDialogEditWayPoint).GetMethod("onSave", BindingFlags.Instance | BindingFlags.NonPublic),
-            prefix: typeof(SharableWaypointsClient).GetMethod("PreOnSave"));
+            prefix: typeof(SharableWaypointsClient).GetMethod("PreOnEditSave"));
     }
 
-    [HarmonyPrefix]
-    [HarmonyPatch(typeof(WaypointMapLayer), "OnDataFromServer")]
-    public static bool PreOnDataFromServer(WaypointMapLayer __instance, byte[] data) {
+    public static bool PreOnDataFromServer(WaypointMapLayer __instance, byte[] data, ref ICoreAPI ___api, ref List<MapComponent> ___tmpWayPointComponents) {
         __instance.ownWaypoints.Clear();
-        __instance.GetField<List<MapComponent>>("tmpWayPointComponents")?.Clear();
+        ___tmpWayPointComponents.Clear();
 
-        string? uuid = ((ICoreClientAPI)__instance.GetField<ICoreAPI>("api")!).World.Player.PlayerUID;
+        string? uuid = ((ICoreClientAPI)___api).World.Player.PlayerUID;
 
         foreach (Waypoint waypoint in SerializerUtil.Deserialize<List<Waypoint>>(data)) {
             if (waypoint.OwningPlayerUid == uuid) {
                 __instance.ownWaypoints.Add(waypoint);
-            }
-            else {
+            } else {
                 __instance.AddTemporaryWaypoint(waypoint);
             }
         }
 
-        __instance.Invoke("RebuildMapComponents");
+        __instance.GetType().GetMethod("RebuildMapComponents", BindingFlags.NonPublic | BindingFlags.Instance)?.Invoke(__instance, null);
 
         return false;
     }
 
-    [HarmonyPrefix]
-    [HarmonyPatch(typeof(GuiDialogEditWayPoint), "TryOpen")]
-    public static bool PreTryOpen(GuiDialogEditWayPoint __instance, bool __result) {
-        ICoreClientAPI capi = (ICoreClientAPI)__instance.GetField<ICoreAPI>("capi")!;
-        if (__instance.GetField<Waypoint>("waypoint")?.OwningPlayerUid == capi.World.Player.PlayerUID) {
+    public static bool PreAutoSuggestName(GuiDialogAddWayPoint __instance, ref string ___curIcon, ref string ___curColor, ref bool ___ignoreNextAutosuggestDisable) {
+        string? savedName = Settings.GetWaypointName($"{___curIcon}-{___curColor}");
+        if (string.IsNullOrEmpty(savedName)) {
             return true;
         }
 
-        capi.ShowChatMessage(Lang.Get("sharablewaypoints:cannot-edit"));
-        capi.Event.RegisterCallback(_ => { __instance.TryClose(); }, 1);
+        GuiElementTextInput textInput = __instance.SingleComposer.GetTextInput("nameInput");
+        ___ignoreNextAutosuggestDisable = true;
+        textInput.SetValue(savedName);
+        return false;
+    }
+
+    public static void PostOnAddSave(GuiDialogAddWayPoint __instance, ref string ___curIcon, ref string ___curColor) {
+        string curName = __instance.SingleComposer.GetTextInput("nameInput").GetText();
+        Settings.SetWaypointName($"{___curIcon}-{___curColor}", curName);
+    }
+
+    public static bool PreEditTryOpen(GuiDialogEditWayPoint __instance, ref bool __result, ref ICoreClientAPI ___capi, ref Waypoint ___waypoint) {
+        if (___waypoint.OwningPlayerUid == ___capi.World.Player.PlayerUID) {
+            return true;
+        }
+
+        ___capi.ShowChatMessage(Lang.Get("sharablewaypoints:cannot-edit"));
+        ___capi.Event.RegisterCallback(_ => { __instance.TryClose(); }, 1);
 
         __result = false;
         return false;
     }
 
-    [HarmonyPrefix]
-    [HarmonyPatch(typeof(GuiDialogEditWayPoint), "onDelete")]
-    public static bool PreOnDelete(GuiDialogEditWayPoint __instance, bool __result) {
-        ICoreClientAPI capi = (ICoreClientAPI)__instance.GetField<ICoreAPI>("capi")!;
-        if (__instance.GetField<Waypoint>("waypoint")?.OwningPlayerUid == capi.World.Player.PlayerUID) {
+    public static bool PreOnEditDelete(ref bool __result, ref ICoreClientAPI ___capi, ref Waypoint ___waypoint) {
+        if (___waypoint.OwningPlayerUid == ___capi.World.Player.PlayerUID) {
             return true;
         }
 
-        capi.ShowChatMessage(Lang.Get("sharablewaypoints:cannot-delete"));
+        ___capi.ShowChatMessage(Lang.Get("sharablewaypoints:cannot-delete"));
 
         __result = true;
         return false;
     }
 
-    [HarmonyPrefix]
-    [HarmonyPatch(typeof(GuiDialogEditWayPoint), "onSave")]
-    public static bool PreOnSave(GuiDialogEditWayPoint __instance, bool __result) {
-        ICoreClientAPI capi = (ICoreClientAPI)__instance.GetField<ICoreAPI>("capi")!;
-        if (__instance.GetField<Waypoint>("waypoint")?.OwningPlayerUid == capi.World.Player.PlayerUID) {
+    public static bool PreOnEditSave(ref bool __result, ref ICoreClientAPI ___capi, ref Waypoint ___waypoint) {
+        if (___waypoint.OwningPlayerUid == ___capi.World.Player.PlayerUID) {
             return true;
         }
 
-        capi.ShowChatMessage(Lang.Get("sharablewaypoints:cannot-save"));
+        ___capi.ShowChatMessage(Lang.Get("sharablewaypoints:cannot-save"));
 
         __result = true;
         return false;

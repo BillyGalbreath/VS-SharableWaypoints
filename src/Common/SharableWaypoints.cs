@@ -3,17 +3,16 @@ using HarmonyLib;
 namespace SharableWaypoints.Common;
 
 public abstract class SharableWaypoints {
-    private readonly SharableWaypointsMod mod;
+    private readonly string _modId;
 
     protected Harmony Harmony { get; }
 
-    protected SharableWaypoints(SharableWaypointsMod mod) {
-        this.mod = mod;
-
-        Harmony = new Harmony(mod.Mod.Info.ModID);
+    protected SharableWaypoints(string modId) {
+        _modId = modId;
+        Harmony = new Harmony(modId);
     }
 
     public void Dispose() {
-        Harmony.UnpatchAll(mod.Mod.Info.ModID);
+        Harmony.UnpatchAll(_modId);
     }
 }
