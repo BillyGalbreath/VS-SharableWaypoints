@@ -15,9 +15,14 @@ public abstract class Server119 {
 
     public static bool TryPatch(Harmony harmony) {
         try {
-            harmony.Patch(typeof(WaypointMapLayer).GetMethod("OnCmdWayPoint", BindingFlags.Instance | BindingFlags.NonPublic, new[] { typeof(IServerPlayer), typeof(int), typeof(CmdArgs) }),
-                prefix: typeof(Server118).GetMethod("PreOnCmdWayPoint"),
-                postfix: typeof(Server118).GetMethod("PostOnCmdWayPoint"));
+            MethodInfo? preOnCmdWaypoint = typeof(Server118).GetMethod("PreOnCmdWayPoint");
+            MethodInfo? postOnCmdWaypoint = typeof(Server118).GetMethod("PostOnCmdWayPoint");
+
+            harmony.Patch(typeof(WaypointMapLayer).GetMethod("OnCmdWayPointAdd", BindingFlags.Instance | BindingFlags.NonPublic, new[] { typeof(IServerPlayer), typeof(int), typeof(CmdArgs) }), prefix: preOnCmdWaypoint, postfix: postOnCmdWaypoint);
+            harmony.Patch(typeof(WaypointMapLayer).GetMethod("OnCmdWayPointAddp", BindingFlags.Instance | BindingFlags.NonPublic, new[] { typeof(IServerPlayer), typeof(int), typeof(CmdArgs) }), prefix: preOnCmdWaypoint, postfix: postOnCmdWaypoint);
+            harmony.Patch(typeof(WaypointMapLayer).GetMethod("OnCmdWayPointAddat", BindingFlags.Instance | BindingFlags.NonPublic, new[] { typeof(IServerPlayer), typeof(int), typeof(CmdArgs) }), prefix: preOnCmdWaypoint, postfix: postOnCmdWaypoint);
+            harmony.Patch(typeof(WaypointMapLayer).GetMethod("OnCmdWayPointAddati", BindingFlags.Instance | BindingFlags.NonPublic, new[] { typeof(IServerPlayer), typeof(int), typeof(CmdArgs) }), prefix: preOnCmdWaypoint, postfix: postOnCmdWaypoint);
+
             harmony.Patch(typeof(WaypointMapLayer).GetMethod("AddWaypoint", BindingFlags.Instance | BindingFlags.Public, new[] { typeof(Waypoint), typeof(IServerPlayer) }),
                 postfix: typeof(Server118).GetMethod("PostAddWaypoint"));
             return true;
@@ -26,15 +31,15 @@ public abstract class Server119 {
         }
     }
 
-    public static void PreOnCmdWayPoint(IServerPlayer player, int groupId) {
-        GroupCache.Add(player.PlayerUID, groupId);
+    public static void PreOnCmdWayPoint(TextCommandCallingArgs args) {
+        GroupCache.Add(args.Caller.Player.PlayerUID, args.Caller.FromChatGroupId);
     }
 
-    public static void PostOnCmdWayPoint(IServerPlayer player) {
-        GroupCache.Remove(player.PlayerUID);
+    public static void PostOnCmdWayPoint(TextCommandCallingArgs args) {
+        GroupCache.Remove(args.Caller.Player.PlayerUID);
     }
 
     public static void PostAddWaypoint(Waypoint waypoint, IServerPlayer player) {
-        waypoint.OwningPlayerGroupId = GroupCache.GetValueOrDefault(player.PlayerUID, -1);
+        waypoint.OwningPlayerGroupId = GroupCache.GetValueOrDefault(player.PlayerUID, waypoint.OwningPlayerGroupId);
     }
 }
