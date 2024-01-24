@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Reflection;
@@ -21,8 +22,16 @@ public class SharableWaypointsClient : Common.SharableWaypoints {
         Harmony.Patch(typeof(GuiDialogAddWayPoint).GetMethod("onSave", BindingFlags.Instance | BindingFlags.NonPublic),
             postfix: typeof(SharableWaypointsClient).GetMethod("PostOnAddSave"));
 
-        Harmony.Patch(typeof(GuiDialogEditWayPoint).GetMethod("TryOpen", BindingFlags.Instance | BindingFlags.Public),
-            prefix: typeof(SharableWaypointsClient).GetMethod("PreEditTryOpen"));
+        try {
+            Harmony.Patch(typeof(GuiDialogEditWayPoint).GetMethod("TryOpen", BindingFlags.Instance | BindingFlags.Public, Array.Empty<Type>()),
+                prefix: typeof(SharableWaypointsClient).GetMethod("PreEditTryOpen"));
+        } catch (Exception) {
+            // Harmony is weird and wont take `typeof(bool)` as a valid type. it required `typeof(System.Boolean)`
+            // ReSharper disable once BuiltInTypeReferenceStyle
+            Harmony.Patch(typeof(GuiDialogEditWayPoint).GetMethod("TryOpen", BindingFlags.Instance | BindingFlags.Public, new[] { typeof(Boolean) }),
+                prefix: typeof(SharableWaypointsClient).GetMethod("PreEditTryOpen"));
+        }
+
         Harmony.Patch(typeof(GuiDialogEditWayPoint).GetMethod("onDelete", BindingFlags.Instance | BindingFlags.NonPublic),
             prefix: typeof(SharableWaypointsClient).GetMethod("PreOnEditDelete"));
         Harmony.Patch(typeof(GuiDialogEditWayPoint).GetMethod("onSave", BindingFlags.Instance | BindingFlags.NonPublic),
