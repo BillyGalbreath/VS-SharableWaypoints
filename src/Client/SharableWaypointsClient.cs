@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
-using System.Reflection;
 using Vintagestory.API.Client;
 using Vintagestory.API.Common;
 using Vintagestory.API.Config;
@@ -22,9 +21,7 @@ public class SharableWaypointsClient : Common.SharableWaypoints {
         Harmony.Patch(typeof(GuiDialogAddWayPoint).GetMethod("onSave", Flags),
             postfix: typeof(SharableWaypointsClient).GetMethod("PostOnAddSave"));
 
-        // Harmony is weird and wont take `typeof(bool)` as a valid type. it required `typeof(System.Boolean)`
-        // ReSharper disable once BuiltInTypeReferenceStyle
-        Harmony.Patch(typeof(GuiDialogEditWayPoint).GetMethod("TryOpen", Flags, new[] { typeof(Boolean) }),
+        Harmony.Patch(typeof(GuiDialogEditWayPoint).GetMethod("TryOpen", Flags, Array.Empty<Type>()),
             prefix: typeof(SharableWaypointsClient).GetMethod("PreEditTryOpen"));
 
         Harmony.Patch(typeof(GuiDialogEditWayPoint).GetMethod("onDelete", Flags),
