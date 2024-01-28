@@ -14,27 +14,22 @@ namespace SharableWaypoints.Client;
 [SuppressMessage("ReSharper", "UnusedMember.Global")]
 public class SharableWaypointsClient : Common.SharableWaypoints {
     public SharableWaypointsClient(ModSystem mod) : base(mod.Mod.Info.ModID) {
-        Harmony.Patch(typeof(WaypointMapLayer).GetMethod("OnDataFromServer", BindingFlags.Instance | BindingFlags.Public),
+        Harmony.Patch(typeof(WaypointMapLayer).GetMethod("OnDataFromServer", Flags),
             prefix: typeof(SharableWaypointsClient).GetMethod("PreOnDataFromServer"));
 
-        Harmony.Patch(typeof(GuiDialogAddWayPoint).GetMethod("autoSuggestName", BindingFlags.Instance | BindingFlags.NonPublic),
+        Harmony.Patch(typeof(GuiDialogAddWayPoint).GetMethod("autoSuggestName", Flags),
             prefix: typeof(SharableWaypointsClient).GetMethod("PreAutoSuggestName"));
-        Harmony.Patch(typeof(GuiDialogAddWayPoint).GetMethod("onSave", BindingFlags.Instance | BindingFlags.NonPublic),
+        Harmony.Patch(typeof(GuiDialogAddWayPoint).GetMethod("onSave", Flags),
             postfix: typeof(SharableWaypointsClient).GetMethod("PostOnAddSave"));
 
-        try {
-            Harmony.Patch(typeof(GuiDialogEditWayPoint).GetMethod("TryOpen", BindingFlags.Instance | BindingFlags.Public, Array.Empty<Type>()),
-                prefix: typeof(SharableWaypointsClient).GetMethod("PreEditTryOpen"));
-        } catch (Exception) {
-            // Harmony is weird and wont take `typeof(bool)` as a valid type. it required `typeof(System.Boolean)`
-            // ReSharper disable once BuiltInTypeReferenceStyle
-            Harmony.Patch(typeof(GuiDialogEditWayPoint).GetMethod("TryOpen", BindingFlags.Instance | BindingFlags.Public, new[] { typeof(Boolean) }),
-                prefix: typeof(SharableWaypointsClient).GetMethod("PreEditTryOpen"));
-        }
+        // Harmony is weird and wont take `typeof(bool)` as a valid type. it required `typeof(System.Boolean)`
+        // ReSharper disable once BuiltInTypeReferenceStyle
+        Harmony.Patch(typeof(GuiDialogEditWayPoint).GetMethod("TryOpen", Flags, new[] { typeof(Boolean) }),
+            prefix: typeof(SharableWaypointsClient).GetMethod("PreEditTryOpen"));
 
-        Harmony.Patch(typeof(GuiDialogEditWayPoint).GetMethod("onDelete", BindingFlags.Instance | BindingFlags.NonPublic),
+        Harmony.Patch(typeof(GuiDialogEditWayPoint).GetMethod("onDelete", Flags),
             prefix: typeof(SharableWaypointsClient).GetMethod("PreOnEditDelete"));
-        Harmony.Patch(typeof(GuiDialogEditWayPoint).GetMethod("onSave", BindingFlags.Instance | BindingFlags.NonPublic),
+        Harmony.Patch(typeof(GuiDialogEditWayPoint).GetMethod("onSave", Flags),
             prefix: typeof(SharableWaypointsClient).GetMethod("PreOnEditSave"));
     }
 
@@ -52,7 +47,7 @@ public class SharableWaypointsClient : Common.SharableWaypoints {
             }
         }
 
-        __instance.GetType().GetMethod("RebuildMapComponents", BindingFlags.NonPublic | BindingFlags.Instance)?.Invoke(__instance, null);
+        __instance.GetType().GetMethod("RebuildMapComponents", Flags)?.Invoke(__instance, null);
 
         return false;
     }

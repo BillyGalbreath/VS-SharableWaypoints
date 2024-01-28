@@ -1,3 +1,3 @@
 # Sharable Waypoints
 
-Share your waypoints with your group
+Share your waypoints with your groups

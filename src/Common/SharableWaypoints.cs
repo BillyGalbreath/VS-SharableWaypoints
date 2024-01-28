@@ -1,8 +1,11 @@
+using System.Reflection;
 using HarmonyLib;
 
 namespace SharableWaypoints.Common;
 
 public abstract class SharableWaypoints {
+    protected const BindingFlags Flags = BindingFlags.Instance | BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic;
+
     private readonly string _modId;
 
     protected Harmony Harmony { get; }

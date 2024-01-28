@@ -32,7 +32,7 @@ public class Settings {
     }
 
     private static Settings Read() {
-        _filename = Path.Combine(GamePaths.DataPath, "ModData", SharableWaypointsMod.Api.World.SavegameIdentifier, "sharablewaypoints.yml");
+        _filename = Path.Combine(GamePaths.DataPath, "ModData", SharableWaypointsMod.SavegameIdentifier, "sharablewaypoints.yml");
         try {
             return new DeserializerBuilder()
                 .IgnoreUnmatchedProperties()
