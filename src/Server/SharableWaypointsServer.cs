@@ -28,7 +28,6 @@ public class SharableWaypointsServer : Common.SharableWaypoints {
     }
 
     public static void PreOnCmdWayPoint(TextCommandCallingArgs args) {
-        Console.WriteLine("##### " + args.Caller.FromChatGroupId);
         GroupCache.Add(args.Caller.Player.PlayerUID, args.Caller.FromChatGroupId);
     }
 
