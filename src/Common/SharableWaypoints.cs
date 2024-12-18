@@ -4,18 +4,45 @@ using HarmonyLib;
 namespace SharableWaypoints.Common;
 
 public abstract class SharableWaypoints {
-    protected const BindingFlags Flags = BindingFlags.Instance | BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic;
+    private readonly SharableWaypointsMod _mod;
+    private readonly Harmony _harmony;
 
-    private readonly string _modId;
+    protected SharableWaypoints(SharableWaypointsMod mod) {
+        _mod = mod;
+        _harmony = new Harmony(_mod.Mod.Info.ModID);
+    }
 
-    protected Harmony Harmony { get; }
+    protected void Patch<T>(string original, Delegate? prefix = null, Delegate? postfix = null, Delegate? transpiler = null, Delegate? finalizer = null, Type[]? types = null) {
+        if (_harmony == null) {
+            throw new InvalidOperationException("Harmony has not been instantiated yet!");
+        }
 
-    protected SharableWaypoints(string modId) {
-        _modId = modId;
-        Harmony = new Harmony(modId);
+        Patch(AccessTools.Method(typeof(T), original), prefix, postfix, transpiler, finalizer);
+    }
+
+    private void Patch(MethodBase? method, Delegate? prefix = null, Delegate? postfix = null, Delegate? transpiler = null, Delegate? finalizer = null) {
+        if (_harmony == null) {
+            throw new InvalidOperationException("Harmony has not been instantiated yet!");
+        }
+
+        if (prefix != null) {
+            _harmony.Patch(method, prefix: prefix);
+        }
+
+        if (postfix != null) {
+            _harmony.Patch(method, postfix: postfix);
+        }
+
+        if (transpiler != null) {
+            _harmony.Patch(method, transpiler: transpiler);
+        }
+
+        if (finalizer != null) {
+            _harmony.Patch(method, finalizer: finalizer);
+        }
     }
 
     public void Dispose() {
-        Harmony.UnpatchAll(_modId);
+        _harmony.UnpatchAll(_mod.Mod.Info.ModID);
     }
 }

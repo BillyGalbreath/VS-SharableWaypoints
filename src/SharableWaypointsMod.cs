@@ -9,9 +9,6 @@ namespace SharableWaypoints;
 
 [SuppressMessage("ReSharper", "ClassNeverInstantiated.Global")]
 public class SharableWaypointsMod : ModSystem {
-    public static string SavegameIdentifier => _api!.World.SavegameIdentifier;
-    private static ICoreAPI? _api;
-
     private SharableWaypointsClient? _client;
     private SharableWaypointsServer? _server;
 
@@ -19,13 +16,11 @@ public class SharableWaypointsMod : ModSystem {
         return true;
     }
 
-    public override void StartClientSide(ICoreClientAPI? api) {
-        _api = api;
+    public override void StartClientSide(ICoreClientAPI api) {
         _client = new SharableWaypointsClient(this);
     }
 
-    public override void StartServerSide(ICoreServerAPI? api) {
-        _api = api;
+    public override void StartServerSide(ICoreServerAPI api) {
         _server = new SharableWaypointsServer(this);
     }
 
@@ -35,7 +30,5 @@ public class SharableWaypointsMod : ModSystem {
 
         _server?.Dispose();
         _server = null;
-
-        _api = null;
     }
 }

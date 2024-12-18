@@ -2,7 +2,7 @@
   "type": "code",
   "name": "Sharable Waypoints",
   "modid": "sharablewaypoints",
-  "version": "1.5.4",
+  "version": "2.0.0-beta",
   "description": "Share your waypoints with your groups",
   "website": "https://github.com/BillyGalbreath/VS-SharableWaypoints",
   "authors": [ "BillyGalbreath" ],
@@ -10,6 +10,6 @@
   "requiredOnClient": true,
   "requiredOnServer": true,
   "dependencies": {
-    "game": "1.19.0"
+    "game": "1.20.0-rc.4"
   }
 }

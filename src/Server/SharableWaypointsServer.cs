@@ -1,6 +1,3 @@
-using System;
-using System.Collections.Generic;
-using System.Reflection;
 using Vintagestory.API.Common;
 using Vintagestory.API.Server;
 using Vintagestory.GameContent;
@@ -8,34 +5,25 @@ using Vintagestory.GameContent;
 namespace SharableWaypoints.Server;
 
 public class SharableWaypointsServer : Common.SharableWaypoints {
-    private static readonly Dictionary<string, int> GroupCache = new();
+    private static readonly Dictionary<string, int> _groupCache = new();
 
-    public SharableWaypointsServer(ModSystem mod) : base(mod.Mod.Info.ModID) {
-        MethodInfo? preOnCmdWaypoint = typeof(SharableWaypointsServer).GetMethod("PreOnCmdWayPoint");
-        MethodInfo? postOnCmdWaypoint = typeof(SharableWaypointsServer).GetMethod("PostOnCmdWayPoint");
-
-        Harmony.Patch(typeof(WaypointMapLayer).GetMethod("OnCmdWayPointAdd", Flags, new[] { typeof(TextCommandCallingArgs) }),
-            prefix: preOnCmdWaypoint, postfix: postOnCmdWaypoint);
-        Harmony.Patch(typeof(WaypointMapLayer).GetMethod("OnCmdWayPointAddp", Flags, new[] { typeof(TextCommandCallingArgs) }),
-            prefix: preOnCmdWaypoint, postfix: postOnCmdWaypoint);
-        Harmony.Patch(typeof(WaypointMapLayer).GetMethod("OnCmdWayPointAddat", Flags, new[] { typeof(TextCommandCallingArgs) }),
-            prefix: preOnCmdWaypoint, postfix: postOnCmdWaypoint);
-        Harmony.Patch(typeof(WaypointMapLayer).GetMethod("OnCmdWayPointAddati", Flags, new[] { typeof(TextCommandCallingArgs) }),
-            prefix: preOnCmdWaypoint, postfix: postOnCmdWaypoint);
-
-        Harmony.Patch(typeof(WaypointMapLayer).GetMethod("AddWaypoint", Flags, new[] { typeof(Waypoint), typeof(IServerPlayer) }),
-            postfix: typeof(SharableWaypointsServer).GetMethod("PostAddWaypoint"));
+    public SharableWaypointsServer(SharableWaypointsMod mod) : base(mod) {
+        Patch<WaypointMapLayer>("OnCmdWayPointAdd", prefix: PreOnCmdWaypoint, postfix: PostOnCmdWaypoint, types: new[] { typeof(TextCommandCallingArgs) });
+        Patch<WaypointMapLayer>("OnCmdWayPointAddp", prefix: PreOnCmdWaypoint, postfix: PostOnCmdWaypoint, types: new[] { typeof(TextCommandCallingArgs) });
+        Patch<WaypointMapLayer>("OnCmdWayPointAddat", prefix: PreOnCmdWaypoint, postfix: PostOnCmdWaypoint, types: new[] { typeof(TextCommandCallingArgs) });
+        Patch<WaypointMapLayer>("OnCmdWayPointAddati", prefix: PreOnCmdWaypoint, postfix: PostOnCmdWaypoint, types: new[] { typeof(TextCommandCallingArgs) });
+        Patch<WaypointMapLayer>("AddWaypoint", postfix: PostAddWaypoint, types: new[] { typeof(Waypoint), typeof(IServerPlayer) });
     }
 
-    public static void PreOnCmdWayPoint(TextCommandCallingArgs args) {
-        GroupCache.Add(args.Caller.Player.PlayerUID, args.Caller.FromChatGroupId);
+    private static void PreOnCmdWaypoint(TextCommandCallingArgs args) {
+        _groupCache.Add(args.Caller.Player.PlayerUID, args.Caller.FromChatGroupId);
     }
 
-    public static void PostOnCmdWayPoint(TextCommandCallingArgs args) {
-        GroupCache.Remove(args.Caller.Player.PlayerUID);
+    private static void PostOnCmdWaypoint(TextCommandCallingArgs args) {
+        _groupCache.Remove(args.Caller.Player.PlayerUID);
     }
 
-    public static void PostAddWaypoint(Waypoint waypoint, IServerPlayer player) {
-        waypoint.OwningPlayerGroupId = GroupCache.GetValueOrDefault(player.PlayerUID, waypoint.OwningPlayerGroupId);
+    private static void PostAddWaypoint(Waypoint waypoint, IServerPlayer player) {
+        waypoint.OwningPlayerGroupId = _groupCache.GetValueOrDefault(player.PlayerUID, waypoint.OwningPlayerGroupId);
     }
 }

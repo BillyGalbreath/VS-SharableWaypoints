@@ -1,6 +1,4 @@
-using System;
-using System.Collections.Generic;
-using System.Diagnostics.CodeAnalysis;
+using HarmonyLib;
 using Vintagestory.API.Client;
 using Vintagestory.API.Common;
 using Vintagestory.API.Config;
@@ -9,28 +7,17 @@ using Vintagestory.GameContent;
 
 namespace SharableWaypoints.Client;
 
-[SuppressMessage("ReSharper", "InconsistentNaming")]
-[SuppressMessage("ReSharper", "UnusedMember.Global")]
 public class SharableWaypointsClient : Common.SharableWaypoints {
-    public SharableWaypointsClient(ModSystem mod) : base(mod.Mod.Info.ModID) {
-        Harmony.Patch(typeof(WaypointMapLayer).GetMethod("OnDataFromServer", Flags),
-            prefix: typeof(SharableWaypointsClient).GetMethod("PreOnDataFromServer"));
-
-        Harmony.Patch(typeof(GuiDialogAddWayPoint).GetMethod("autoSuggestName", Flags),
-            prefix: typeof(SharableWaypointsClient).GetMethod("PreAutoSuggestName"));
-        Harmony.Patch(typeof(GuiDialogAddWayPoint).GetMethod("onSave", Flags),
-            postfix: typeof(SharableWaypointsClient).GetMethod("PostOnAddSave"));
-
-        Harmony.Patch(typeof(GuiDialogEditWayPoint).GetMethod("TryOpen", Flags, Array.Empty<Type>()),
-            prefix: typeof(SharableWaypointsClient).GetMethod("PreEditTryOpen"));
-
-        Harmony.Patch(typeof(GuiDialogEditWayPoint).GetMethod("onDelete", Flags),
-            prefix: typeof(SharableWaypointsClient).GetMethod("PreOnEditDelete"));
-        Harmony.Patch(typeof(GuiDialogEditWayPoint).GetMethod("onSave", Flags),
-            prefix: typeof(SharableWaypointsClient).GetMethod("PreOnEditSave"));
+    public SharableWaypointsClient(SharableWaypointsMod mod) : base(mod) {
+        Patch<WaypointMapLayer>("OnDataFromServer", prefix: PreOnDataFromServer);
+        Patch<GuiDialogAddWayPoint>("autoSuggestName", prefix: PreAutoSuggestName);
+        Patch<GuiDialogAddWayPoint>("onSave", postfix: PostAddOnSave);
+        Patch<GuiDialogEditWayPoint>("TryOpen", prefix: PreEditTryOpen, types: Array.Empty<Type>());
+        Patch<GuiDialogEditWayPoint>("onDelete", prefix: PreEditOnDelete);
+        Patch<GuiDialogEditWayPoint>("onSave", prefix: PreEditOnSave);
     }
 
-    public static bool PreOnDataFromServer(WaypointMapLayer __instance, byte[] data, ref ICoreAPI ___api, ref List<MapComponent> ___tmpWayPointComponents) {
+    private static bool PreOnDataFromServer(WaypointMapLayer __instance, byte[] data, ref ICoreAPI ___api, ref List<MapComponent> ___tmpWayPointComponents) {
         __instance.ownWaypoints.Clear();
         ___tmpWayPointComponents.Clear();
 
@@ -44,12 +31,12 @@ public class SharableWaypointsClient : Common.SharableWaypoints {
             }
         }
 
-        __instance.GetType().GetMethod("RebuildMapComponents", Flags)?.Invoke(__instance, null);
+        AccessTools.Method(__instance.GetType(), "RebuildMapComponents")?.Invoke(__instance, null);
 
         return false;
     }
 
-    public static bool PreAutoSuggestName(GuiDialogAddWayPoint __instance, ref string ___curIcon, ref string ___curColor, ref bool ___ignoreNextAutosuggestDisable) {
+    private static bool PreAutoSuggestName(GuiDialogAddWayPoint __instance, ref string ___curIcon, ref string ___curColor, ref bool ___ignoreNextAutosuggestDisable) {
         string? savedName = Settings.GetWaypointName($"{___curIcon}-{___curColor}");
         if (string.IsNullOrEmpty(savedName)) {
             return true;
@@ -61,12 +48,12 @@ public class SharableWaypointsClient : Common.SharableWaypoints {
         return false;
     }
 
-    public static void PostOnAddSave(GuiDialogAddWayPoint __instance, ref string ___curIcon, ref string ___curColor) {
+    private static void PostAddOnSave(GuiDialogAddWayPoint __instance, ref string ___curIcon, ref string ___curColor) {
         string curName = __instance.SingleComposer.GetTextInput("nameInput").GetText();
         Settings.SetWaypointName($"{___curIcon}-{___curColor}", curName);
     }
 
-    public static bool PreEditTryOpen(GuiDialogEditWayPoint __instance, ref bool __result, ref ICoreClientAPI ___capi, ref Waypoint ___waypoint) {
+    private static bool PreEditTryOpen(GuiDialogEditWayPoint __instance, ref bool __result, ref ICoreClientAPI ___capi, ref Waypoint ___waypoint) {
         if (___waypoint.OwningPlayerUid == ___capi.World.Player.PlayerUID) {
             return true;
         }
@@ -78,7 +65,7 @@ public class SharableWaypointsClient : Common.SharableWaypoints {
         return false;
     }
 
-    public static bool PreOnEditDelete(ref bool __result, ref ICoreClientAPI ___capi, ref Waypoint ___waypoint) {
+    private static bool PreEditOnDelete(ref bool __result, ref ICoreClientAPI ___capi, ref Waypoint ___waypoint) {
         if (___waypoint.OwningPlayerUid == ___capi.World.Player.PlayerUID) {
             return true;
         }
@@ -89,7 +76,7 @@ public class SharableWaypointsClient : Common.SharableWaypoints {
         return false;
     }
 
-    public static bool PreOnEditSave(ref bool __result, ref ICoreClientAPI ___capi, ref Waypoint ___waypoint) {
+    private static bool PreEditOnSave(ref bool __result, ref ICoreClientAPI ___capi, ref Waypoint ___waypoint) {
         if (___waypoint.OwningPlayerUid == ___capi.World.Player.PlayerUID) {
             return true;
         }
